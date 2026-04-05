@@ -63,6 +63,16 @@ export function calculateFull(
   const hasWarehouseDetail = wh.storageCostMonthly > 0 || wh.assemblyCostPerOrder > 0;
   const hasDetailedExpenses = monthly.some(e => e.amount > 0) || team.length > 0;
 
+  // Marketing: calculate effective budget from detail if filled
+  const paidClicks = hasMarketingDetail && mkt.cpc > 0 && mkt.paidTrafficPercent > 0
+    ? Math.round(params.traffic * mkt.paidTrafficPercent / 100)
+    : 0;
+  const paidAdCost = paidClicks * mkt.cpc;
+  const channelsBudget = mkt.bloggersBudget + mkt.emailBudget + mkt.seoBudget;
+  const effectiveMarketingBudget = hasMarketingDetail
+    ? paidAdCost + channelsBudget
+    : params.marketingBudget;
+
   // Revenue adjustments
   const cancelRate = rev.cancelRatePercent / 100;
   const returnRate = rev.returnRatePercent / 100;
@@ -86,7 +96,7 @@ export function calculateFull(
   const newCustomers = effectiveOrders;
   const repeatCustomers = hasLTVData ? Math.round(newCustomers * repeatRate) : 0;
   const repeatRevenue = repeatCustomers * repeatCheck;
-  const firstOrderProfit = contributionPerOrder - safe(safeDivide(params.marketingBudget, effectiveOrders));
+  const firstOrderProfit = contributionPerOrder - safe(safeDivide(effectiveMarketingBudget, effectiveOrders));
   const ltvCacRatio = safe(safeDivide(ltvValue, base.cac));
 
   // Team costs
@@ -117,7 +127,7 @@ export function calculateFull(
   const cogs2 = effectiveOrders * params.costPerOrder + (repeatCustomers * params.costPerOrder);
   const varCosts = (effectiveOrders + repeatCustomers) * effectiveVarCostPerOrder;
   const grossProfit2 = rev2 - cogs2;
-  const operatingProfit = grossProfit2 - params.marketingBudget - varCosts - effectiveFixedCosts - returnCost;
+  const operatingProfit = grossProfit2 - effectiveMarketingBudget - varCosts - effectiveFixedCosts - returnCost;
   const taxRate = proj.taxRatePercent / 100;
   const taxAmount = operatingProfit > 0 ? operatingProfit * taxRate : 0;
   const netProfit = operatingProfit - taxAmount;
@@ -128,11 +138,11 @@ export function calculateFull(
 
   // Break-even in revenue
   const breakEvenRevenue = contributionMarginPercent > 0
-    ? safe((params.marketingBudget + effectiveFixedCosts) / (contributionMarginPercent / 100))
+    ? safe((effectiveMarketingBudget + effectiveFixedCosts) / (contributionMarginPercent / 100))
     : null;
 
   // Required params for break-even
-  const totalFixedLike = params.marketingBudget + effectiveFixedCosts;
+  const totalFixedLike = effectiveMarketingBudget + effectiveFixedCosts;
   const requiredConversion = base.marginPerOrder > 0 && params.traffic > 0
     ? safe(totalFixedLike / (base.marginPerOrder * params.traffic) * 100)
     : null;
@@ -150,12 +160,18 @@ export function calculateFull(
     ? Math.ceil(effectiveStartup / netProfit)
     : null;
 
+  // Recalculate CAC and ROMI with effective marketing budget
+  const effectiveCac = safe(safeDivide(effectiveMarketingBudget, effectiveOrders));
+  const effectiveRomi = safe(safeDivide(effectiveRevenue - cogs2 - effectiveMarketingBudget, effectiveMarketingBudget) * 100);
+
   return {
     ...base,
-    profit: hasDetailedExpenses || hasRevDetail ? netProfit : base.profit,
+    profit: hasDetailedExpenses || hasRevDetail || hasMarketingDetail ? netProfit : base.profit,
     profitPerOrder: safe(safeDivide(netProfit, effectiveOrders)),
     isProfitable: netProfit > 0,
     paybackMonths,
+    cac: hasMarketingDetail ? effectiveCac : base.cac,
+    romi: hasMarketingDetail ? effectiveRomi : base.romi,
 
     effectiveOrders, effectiveRevenue, returnCost, cancelledOrders, discountImpact,
     ltv: ltvValue, ltvCacRatio, repeatRevenue, firstOrderProfit, newCustomers, repeatCustomers,
@@ -211,7 +227,9 @@ export function generateProjections(
       revenue: full.effectiveRevenue + full.repeatRevenue,
       cogs: full.cogs,
       grossProfit: full.grossProfit,
-      marketing: params.marketingBudget,
+      marketing: full.hasMarketingDetail
+        ? (full.cac * full.effectiveOrders)
+        : params.marketingBudget,
       variableCosts: full.totalVariableCosts,
       fixedCosts: full.hasDetailedExpenses ? full.detailedMonthlyCosts + full.totalTeamCost : params.fixedCosts,
       operatingProfit: full.operatingProfit,
