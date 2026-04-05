@@ -57,8 +57,7 @@ export function calculateFull(
   const base = calculate(params);
 
   // Feature flags
-  const hasRevPricing = rev.avgProductPrice > 0 && rev.avgItemsPerOrder > 0;
-  const hasRevDetail = hasRevPricing || rev.cancelRatePercent > 0 || rev.returnRatePercent > 0 || rev.discountSharePercent > 0;
+  const hasRevDetail = rev.cancelRatePercent > 0 || rev.returnRatePercent > 0 || rev.discountSharePercent > 0;
   const hasLTVData = ltv.repeatPurchaseRatePercent > 0;
   const hasMarketingDetail = mkt.cpc > 0 || mkt.bloggersBudget > 0;
   const hasWarehouseDetail = wh.storageCostMonthly > 0 || wh.assemblyCostPerOrder > 0;
@@ -74,26 +73,24 @@ export function calculateFull(
     ? paidAdCost + channelsBudget
     : params.marketingBudget;
 
-  // Revenue adjustments
-  const effectiveCheck = hasRevPricing
-    ? rev.avgProductPrice * rev.avgItemsPerOrder
-    : params.averageCheck;
+  // Revenue adjustments — base averageCheck is always authoritative
   const cancelRate = rev.cancelRatePercent / 100;
   const returnRate = rev.returnRatePercent / 100;
-  const effectiveOrders = hasRevDetail ? Math.round(base.orders * (1 - cancelRate)) : base.orders;
+  const hasRevAdjustments = rev.cancelRatePercent > 0 || rev.returnRatePercent > 0 || rev.discountSharePercent > 0;
+  const effectiveOrders = hasRevAdjustments ? Math.round(base.orders * (1 - cancelRate)) : base.orders;
   const cancelledOrders = base.orders - effectiveOrders;
-  const discountImpact = safe(effectiveOrders * effectiveCheck * (rev.discountSharePercent / 100) * (rev.avgDiscountPercent / 100));
+  const discountImpact = safe(effectiveOrders * params.averageCheck * (rev.discountSharePercent / 100) * (rev.avgDiscountPercent / 100));
   const returnCost = safe(effectiveOrders * returnRate * params.costPerOrder);
-  const effectiveRevenue = hasRevDetail
-    ? effectiveOrders * effectiveCheck * (1 - returnRate) - discountImpact
+  const effectiveRevenue = hasRevAdjustments
+    ? effectiveOrders * params.averageCheck * (1 - returnRate) - discountImpact
     : base.revenue;
 
   // LTV
   const repeatRate = ltv.repeatPurchaseRatePercent / 100;
   const ordersPerYear = ltv.avgOrdersPerCustomerPerYear || 1;
   const lifetimeMonths = ltv.customerLifetimeMonths || 12;
-  const repeatCheck = ltv.repeatOrderAvgCheck || effectiveCheck;
-  const contributionPerOrder = effectiveCheck - params.costPerOrder - params.variableCostPerOrder;
+  const repeatCheck = ltv.repeatOrderAvgCheck || params.averageCheck;
+  const contributionPerOrder = params.averageCheck - params.costPerOrder - params.variableCostPerOrder;
   const ltvValue = hasLTVData
     ? safe(contributionPerOrder * ordersPerYear * (lifetimeMonths / 12))
     : safe(contributionPerOrder);
@@ -115,16 +112,16 @@ export function calculateFull(
   const fulfillmentCostPerOrder = wh.assemblyCostPerOrder + wh.packagingCostPerOrder + wh.deliveryCostPerOrder;
   const frozenInventory = wh.frozenInventoryAmount;
 
-  // Effective costs (use detailed if filled, else base)
-  const effectiveFixedCosts = hasDetailedExpenses
-    ? detailedMonthlyCosts + totalTeamCost + warehouseMonthlyCost
-    : params.fixedCosts;
+  // Effective costs — base params always included, extended params add on top
+  const effectiveFixedCosts = params.fixedCosts
+    + (hasDetailedExpenses ? detailedMonthlyCosts + totalTeamCost : 0)
+    + (hasWarehouseDetail ? warehouseMonthlyCost : 0);
 
   const effectiveVarCostPerOrder = hasWarehouseDetail
     ? params.variableCostPerOrder + fulfillmentCostPerOrder + wh.returnProcessingCost * returnRate
     : params.variableCostPerOrder;
 
-  const effectiveStartup = totalOneTimeCosts > 0 ? totalOneTimeCosts : params.initialInvestment;
+  const effectiveStartup = params.initialInvestment + totalOneTimeCosts;
 
   // P&L
   const rev2 = effectiveRevenue + (hasLTVData ? repeatRevenue : 0);
@@ -137,8 +134,8 @@ export function calculateFull(
   const netProfit = operatingProfit - taxAmount;
 
   // Contribution margin
-  const contributionMargin = effectiveCheck - params.costPerOrder - effectiveVarCostPerOrder;
-  const contributionMarginPercent = safe(safeDivide(contributionMargin, effectiveCheck) * 100);
+  const contributionMargin = params.averageCheck - params.costPerOrder - effectiveVarCostPerOrder;
+  const contributionMarginPercent = safe(safeDivide(contributionMargin, params.averageCheck) * 100);
 
   // Break-even in revenue
   const breakEvenRevenue = contributionMarginPercent > 0
@@ -170,7 +167,7 @@ export function calculateFull(
 
   return {
     ...base,
-    profit: hasDetailedExpenses || hasRevDetail || hasMarketingDetail ? netProfit : base.profit,
+    profit: (hasDetailedExpenses || hasRevDetail || hasMarketingDetail) ? netProfit : base.profit,
     profitPerOrder: safe(safeDivide(netProfit, effectiveOrders)),
     isProfitable: netProfit > 0,
     paybackMonths,
@@ -204,7 +201,7 @@ export function generateProjections(
 ): MonthlyProjection[] {
   const result: MonthlyProjection[] = [];
   let cumProfit = 0;
-  const startup = oneTime.reduce((s, e) => s + e.amount, 0) || params.initialInvestment;
+  const startup = params.initialInvestment + oneTime.reduce((s, e) => s + e.amount, 0);
   let cumCash = -startup;
 
   for (let m = 1; m <= proj.months; m++) {
@@ -235,7 +232,7 @@ export function generateProjections(
         ? (full.cac * full.effectiveOrders)
         : params.marketingBudget,
       variableCosts: full.totalVariableCosts,
-      fixedCosts: full.hasDetailedExpenses ? full.detailedMonthlyCosts + full.totalTeamCost : params.fixedCosts,
+      fixedCosts: params.fixedCosts + (full.hasDetailedExpenses ? full.detailedMonthlyCosts + full.totalTeamCost : 0),
       operatingProfit: full.operatingProfit,
       tax: full.taxAmount,
       netProfit: full.netProfit,

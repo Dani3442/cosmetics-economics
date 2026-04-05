@@ -62,7 +62,7 @@ export default function App() {
     <div className={darkMode ? 'dark' : ''}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4">
-          <Header />
+          <Header metrics={metrics} />
           <div className="flex gap-6 mt-4">
             <TabNav />
             <main className="flex-1 min-w-0">
