@@ -4,7 +4,8 @@ meta:
     name: docker
     version: ""
 build:
-  dockerfile: Dockerfile
+  dockerfile: ./Dockerfile
+  context: .
   skip: false
 run:
   containerPort: 80
