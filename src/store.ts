@@ -66,77 +66,52 @@ export const useStore = create<Store>()(
       activeTab: 'dashboard',
       darkMode: false,
 
-      setParam: (key, value) =>
-        set((s) => ({ params: { ...s.params, [key]: value } })),
+      setParam: (key, value) => set((s) => ({ params: { ...s.params, [key]: value } })),
       setParams: (p) => set({ params: { ...p } }),
-      setRevenue: (key, value) =>
-        set((s) => ({ revenue: { ...s.revenue, [key]: value } })),
-      setMarketing: (key, value) =>
-        set((s) => ({ marketing: { ...s.marketing, [key]: value } })),
-      setLtv: (key, value) =>
-        set((s) => ({ ltv: { ...s.ltv, [key]: value } })),
-      setWarehouse: (key, value) =>
-        set((s) => ({ warehouse: { ...s.warehouse, [key]: value } })),
-      setProjection: (key, value) =>
-        set((s) => ({ projection: { ...s.projection, [key]: value } })),
+      setRevenue: (key, value) => set((s) => ({ revenue: { ...s.revenue, [key]: value } })),
+      setMarketing: (key, value) => set((s) => ({ marketing: { ...s.marketing, [key]: value } })),
+      setLtv: (key, value) => set((s) => ({ ltv: { ...s.ltv, [key]: value } })),
+      setWarehouse: (key, value) => set((s) => ({ warehouse: { ...s.warehouse, [key]: value } })),
+      setProjection: (key, value) => set((s) => ({ projection: { ...s.projection, [key]: value } })),
 
-      addOneTimeExpense: () =>
-        set((s) => ({ oneTimeExpenses: [...s.oneTimeExpenses, { id: uid(), name: '', amount: 0 }] })),
-      updateOneTimeExpense: (id, field, value) =>
-        set((s) => ({
-          oneTimeExpenses: s.oneTimeExpenses.map((e) => e.id === id ? { ...e, [field]: value } : e),
-        })),
-      removeOneTimeExpense: (id) =>
-        set((s) => ({ oneTimeExpenses: s.oneTimeExpenses.filter((e) => e.id !== id) })),
+      addOneTimeExpense: () => set((s) => ({ oneTimeExpenses: [...s.oneTimeExpenses, { id: uid(), name: '', amount: 0 }] })),
+      updateOneTimeExpense: (id, field, value) => set((s) => ({ oneTimeExpenses: s.oneTimeExpenses.map((e) => e.id === id ? { ...e, [field]: value } : e) })),
+      removeOneTimeExpense: (id) => set((s) => ({ oneTimeExpenses: s.oneTimeExpenses.filter((e) => e.id !== id) })),
 
-      addMonthlyExpense: () =>
-        set((s) => ({ monthlyExpenses: [...s.monthlyExpenses, { id: uid(), name: '', amount: 0 }] })),
-      updateMonthlyExpense: (id, field, value) =>
-        set((s) => ({
-          monthlyExpenses: s.monthlyExpenses.map((e) => e.id === id ? { ...e, [field]: value } : e),
-        })),
-      removeMonthlyExpense: (id) =>
-        set((s) => ({ monthlyExpenses: s.monthlyExpenses.filter((e) => e.id !== id) })),
+      addMonthlyExpense: () => set((s) => ({ monthlyExpenses: [...s.monthlyExpenses, { id: uid(), name: '', amount: 0 }] })),
+      updateMonthlyExpense: (id, field, value) => set((s) => ({ monthlyExpenses: s.monthlyExpenses.map((e) => e.id === id ? { ...e, [field]: value } : e) })),
+      removeMonthlyExpense: (id) => set((s) => ({ monthlyExpenses: s.monthlyExpenses.filter((e) => e.id !== id) })),
 
-      addTeamMember: () =>
-        set((s) => ({
-          teamMembers: [...s.teamMembers, { id: uid(), role: '', salary: 0, taxPercent: 30 }],
-        })),
-      updateTeamMember: (id, field, value) =>
-        set((s) => ({
-          teamMembers: s.teamMembers.map((m) => m.id === id ? { ...m, [field]: value } : m),
-        })),
-      removeTeamMember: (id) =>
-        set((s) => ({ teamMembers: s.teamMembers.filter((m) => m.id !== id) })),
+      addTeamMember: () => set((s) => ({ teamMembers: [...s.teamMembers, { id: uid(), role: '', salary: 0, taxPercent: 30 }] })),
+      updateTeamMember: (id, field, value) => set((s) => ({ teamMembers: s.teamMembers.map((m) => m.id === id ? { ...m, [field]: value } : m) })),
+      removeTeamMember: (id) => set((s) => ({ teamMembers: s.teamMembers.filter((m) => m.id !== id) })),
 
       setActiveTab: (tab) => set({ activeTab: tab }),
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
 
-      reset: () =>
-        set({
-          params: { ...defaultParams },
-          revenue: { ...emptyRevenue },
-          marketing: { ...emptyMarketing },
-          ltv: { ...emptyLTV },
-          warehouse: { ...emptyWarehouse },
-          oneTimeExpenses: [...defaultOneTimeExpenses],
-          monthlyExpenses: [...defaultMonthlyExpenses],
-          teamMembers: [],
-          projection: { ...defaultProjection },
-        }),
+      reset: () => set({
+        params: { ...defaultParams },
+        revenue: { ...emptyRevenue },
+        marketing: { ...emptyMarketing },
+        ltv: { ...emptyLTV },
+        warehouse: { ...emptyWarehouse },
+        oneTimeExpenses: [...defaultOneTimeExpenses],
+        monthlyExpenses: [...defaultMonthlyExpenses],
+        teamMembers: [],
+        projection: { ...defaultProjection },
+      }),
 
-      loadExample: () =>
-        set({
-          params: { ...exampleParams },
-          revenue: { ...exampleRevenue },
-          marketing: { ...exampleMarketing },
-          ltv: { ...exampleLTV },
-          warehouse: { ...exampleWarehouse },
-          oneTimeExpenses: [...exampleOneTimeExpenses],
-          monthlyExpenses: [...exampleMonthlyExpenses],
-          teamMembers: [...exampleTeam],
-        }),
+      loadExample: () => set({
+        params: { ...exampleParams },
+        revenue: { ...exampleRevenue },
+        marketing: { ...exampleMarketing },
+        ltv: { ...exampleLTV },
+        warehouse: { ...exampleWarehouse },
+        oneTimeExpenses: [...exampleOneTimeExpenses],
+        monthlyExpenses: [...exampleMonthlyExpenses],
+        teamMembers: [...exampleTeam],
+      }),
     }),
-    { name: 'cosmetics-economics-v2' }
-  )
+    { name: 'cosmetics-economics-v3' },
+  ),
 );

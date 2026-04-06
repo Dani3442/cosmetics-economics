@@ -1,3 +1,4 @@
-#!/bin/bash
-cd /Users/eugrph/cosmetics-economics
-exec /opt/homebrew/bin/node node_modules/.bin/vite --port 5173
+#!/bin/sh
+set -e
+PORT="${PORT:-5173}"
+npm run dev -- --host 0.0.0.0 --port "$PORT"

@@ -1,0 +1,11 @@
+meta:
+  environment: docker
+  toolchain:
+    name: docker
+    version: ""
+build:
+  dockerfile: ./Dockerfile
+  context: .
+  skip: false
+run:
+  containerPort: 80

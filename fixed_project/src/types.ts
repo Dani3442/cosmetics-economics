@@ -1,4 +1,3 @@
-// === Base params (required, backward-compatible) ===
 export interface InputParams {
   traffic: number;
   conversionPercent: number;
@@ -10,7 +9,6 @@ export interface InputParams {
   initialInvestment: number;
 }
 
-// === Extended optional params ===
 export interface RevenueParams {
   skuCount: number;
   avgProductPrice: number;
@@ -91,6 +89,7 @@ export interface CalculatedMetrics {
 export interface FullMetrics extends CalculatedMetrics {
   effectiveOrders: number;
   effectiveRevenue: number;
+  totalRevenue: number;
   returnCost: number;
   cancelledOrders: number;
   discountImpact: number;
@@ -101,16 +100,17 @@ export interface FullMetrics extends CalculatedMetrics {
   firstOrderProfit: number;
   newCustomers: number;
   repeatCustomers: number;
+  repeatOrders: number;
 
   totalTeamCost: number;
   totalOneTimeCosts: number;
   detailedMonthlyCosts: number;
   warehouseMonthlyCost: number;
   fulfillmentCostPerOrder: number;
-
-  effectiveMarketingBudget: number;
-  effectiveFixedCosts: number;
+  totalFixedCosts: number;
   effectiveVariableCostPerOrder: number;
+  effectiveAverageCheck: number;
+  effectiveMarketingBudget: number;
   totalCosts: number;
 
   operatingProfit: number;

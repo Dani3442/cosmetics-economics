@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { FullMetrics, MonthlyProjection, Recommendation } from '../../types';
 import { useStore } from '../../store';
-import { sensitivityData, breakEvenChartData, calculateScenario, makeCalcContext } from '../../calculations';
+import { sensitivityDataFull, breakEvenChartDataFull, calculateScenario } from '../../calculations';
 import { fmt, fmtCurrency, fmtPercent, fmtShort } from '../../utils';
 import { scenarios } from '../../defaults';
 import { Badge } from '../shared/InputGroup';
@@ -127,11 +127,11 @@ function KPIGrid({ m }: { m: FullMetrics }) {
 
 function RevenueExpensesChart({ m }: { m: FullMetrics }) {
   const data = [
-    { name: 'Выручка', value: m.revenue, fill: '#6366f1' },
+    { name: 'Выручка', value: m.effectiveRevenue, fill: '#6366f1' },
     { name: 'Себестоимость', value: m.cogs, fill: '#f97316' },
     { name: 'Маркетинг', value: m.effectiveMarketingBudget, fill: '#ef4444' },
     { name: 'Переменные', value: m.totalVariableCosts, fill: '#f59e0b' },
-    { name: 'Постоянные', value: m.effectiveFixedCosts, fill: '#8b5cf6' },
+    { name: 'Постоянные', value: m.totalFixedCosts, fill: '#8b5cf6' },
     { name: 'Прибыль', value: m.netProfit, fill: m.netProfit >= 0 ? '#10b981' : '#ef4444' },
   ];
 
@@ -179,12 +179,11 @@ const SENS_COLORS: Record<string, string> = {
 
 function SensitivityChart({ store }: { store: any }) {
   const steps = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4];
-  const ctx = makeCalcContext(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection);
-  const trafficD = sensitivityData(ctx, 'traffic', steps);
-  const convD = sensitivityData(ctx, 'conversionPercent', steps);
-  const checkD = sensitivityData(ctx, 'averageCheck', steps);
-  const costD = sensitivityData(ctx, 'costPerOrder', steps);
-  const mktD = sensitivityData(ctx, 'marketingBudget', steps);
+  const trafficD = sensitivityDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection, 'traffic', steps);
+  const convD = sensitivityDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection, 'conversionPercent', steps);
+  const checkD = sensitivityDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection, 'averageCheck', steps);
+  const costD = sensitivityDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection, 'costPerOrder', steps);
+  const mktD = sensitivityDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection, 'marketingBudget', steps);
   const combined = steps.map((_, i) => ({
     label: trafficD[i].label,
     'Трафик': trafficD[i].profit,
@@ -230,7 +229,7 @@ function CompactTooltip({ active, payload, label }: any) {
 }
 
 function BreakEvenChart({ store }: { store: any }) {
-  const data = breakEvenChartData(makeCalcContext(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection));
+  const data = breakEvenChartDataFull(store.params, store.revenue, store.marketing, store.ltv, store.warehouse, store.oneTimeExpenses, store.monthlyExpenses, store.teamMembers, store.projection);
   return (
     <div className="card">
       <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-100">Точка безубыточности</h3>
@@ -289,8 +288,8 @@ function SummaryTable({ m }: { m: FullMetrics }) {
     ['Валовая прибыль', fmtCurrency(m.grossProfit)],
     ['Валовая маржа', fmtPercent(m.grossMarginPercent)],
     ['Переменные расходы', fmtCurrency(m.totalVariableCosts)],
-    ['Маркетинг', fmtCurrency(m.cac * m.effectiveOrders)],
-    ['Постоянные расходы', fmtCurrency(m.hasDetailedExpenses ? m.detailedMonthlyCosts + m.totalTeamCost : 0)],
+    ['Маркетинг', fmtCurrency(m.effectiveMarketingBudget)],
+    ['Постоянные расходы', fmtCurrency(m.totalFixedCosts)],
     ['Операционная прибыль', fmtCurrency(m.operatingProfit)],
     ['Налог', fmtCurrency(m.taxAmount)],
     ['Чистая прибыль', fmtCurrency(m.netProfit)],
